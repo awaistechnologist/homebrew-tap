@@ -18,8 +18,13 @@ class LlmSidecar < Formula
   # a personal tap does not, and the trade — a network fetch during install,
   # for a tool whose entire purpose is talking to networks — is worth it here.
   def install
-    venv = virtualenv_create(libexec, "python3.13")
-    venv.pip_install "llm-sidecar==#{version}"
+    # Deliberately plain pip rather than Homebrew's `venv.pip_install`. That
+    # helper injects --no-deps --no-binary=:all: --uploaded-prior-to=P1D, which
+    # means it refuses anything published in the last 24 hours and would not
+    # install dependencies anyway. Installing "." from the unpacked sdist lets
+    # pip resolve them normally.
+    virtualenv_create(libexec, "python3.13")
+    system libexec/"bin/pip", "install", "."
     bin.install_symlink libexec/"bin/llm-sidecar"
   end
 
