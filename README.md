@@ -1,28 +1,45 @@
 # awaistechnologist/homebrew-tap
 
-Homebrew formulae for [llm-sidecar](https://github.com/awaistechnologist/llm-sidecar).
+> **Not recommended. Use `pipx install llm-sidecar` instead.**
+>
+> This tap works — it was built and installed successfully — but the cost is
+> not worth paying. It is kept as a record of why, and archived.
 
-```bash
-brew install awaistechnologist/tap/llm-sidecar
-llm-sidecar status
+## What happened
+
+A Homebrew tap looked attractive because it lands binaries in
+`/opt/homebrew/bin`, which is already on `PATH`. pipx installs to
+`~/.local/bin`, which macOS does not include by default, so it edits your shell
+config — and that edit cannot reach a terminal already open. The result is
+`command not found` immediately after a successful install.
+
+Solving that annoyance turned out to cost this:
+
+```
+llvm      1.9 GB
+rust      440 MB
+z3         33 MB
+libgit2, libssh2, llhttp, libxml2, libxslt
+──────────────────────────────────────────
+2.2 GB of build toolchain, before compiling any of the 48 dependencies
 ```
 
-## Why a tap rather than pipx
+Homebrew builds every resource from source. `pydantic-core`, `cryptography`,
+`rpds-py` and `primp` are Rust, and Rust pulls in LLVM. The equivalent
+`pipx install` takes about twenty seconds using prebuilt wheels and needs no
+compiler at all.
 
-Both work. The difference is PATH.
+## The other thing worth recording
 
-`pipx` installs to `~/.local/bin`, which macOS does not include by default — so
-it edits your shell config, and that edit cannot reach a terminal that is
-already open. The result is `command not found` immediately after a successful
-install, which reads as a broken package.
+`brew update-python-resources` cannot generate stanzas for a release published
+in the last 24 hours: it injects pip's `--uploaded-prior-to=P1D` and then
+reports the package does not exist. That gate lives in the generator, not in a
+formula — the 48 stanzas here were written straight from the PyPI JSON API and
+build fine. Useful to know if you hit the same wall on another project.
 
-Homebrew installs to `/opt/homebrew/bin`, already on PATH via `/etc/paths.d`.
-The command works in the same terminal, first time.
+## Conclusion
 
-Use pipx on Linux, or if you would rather not build a virtualenv through brew.
-
-## Updating
-
-```bash
-brew update && brew upgrade llm-sidecar
-```
+Homebrew suits a single self-contained binary — Go, Rust, C. For a Python
+application with dozens of compiled dependencies, pipx is the right tool, and
+one `source ~/.zshrc` is a smaller price than 2.2 GB and a source build on
+every release.
